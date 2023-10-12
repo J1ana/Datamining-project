@@ -1,0 +1,155 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+here we loaded our data set, display it, and make sure there is no missing data
+
+```{r}
+dataset = read.csv('dataset.csv')
+
+View(dataset)
+str(dataset)
+
+
+is.na(dataset)
+sum(is.na(dataset))
+```
+
+here we executed the code to find the outlaiers 
+
+```{r}
+#outlaier
+boxplot(dataset$Member.years)
+
+library(outliers)
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+Out
+Find_outlier
+
+#Remove outlier
+dataset= dataset[-Find_outlier,]
+
+boxplot(dataset$Member.years)
+
+View(dataset)
+
+quantile(dataset$Member.years)
+
+
+
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+Out
+Find_outlier
+```
+
+
+
+
+
+
+
+
+we encoded some of the data and we transformed some of it so we can represent it graphs
+
+```{r}
+#encoding
+dataset$User.country =factor(dataset$User.country, levels = c("Saudi Arabia", "UK", "Canada", "India", "Australia", "New Zeland", "Ireland", "Egypt", "Finland", "Kenya", "Jordan", "Netherlands", "Syria", "Scotland", "South Africa", "Swiss", "United Arab Emirates", "Hungary", "China", "Greece", "Mexico", "Croatia", "Germany", "Malaysia", "Thailand", "Phillippines", "Israel", "India", "Belgium", "Puerto Rico", "Switzerland", "Norway", "France", "Spain", "Singapore", "Brazil", "Costa Rica", "Iran", "USA", "Honduras", "Denmark", "Taiwan", "Hawaii", "Kuwait", "Czech Republic", "Japan", "Korea", "Italy"),
+                          labels =c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48))
+#to integer
+dataset$User.country <- as.integer(dataset$User.country)
+
+
+dataset$Gym =factor(dataset$Gym, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Tennis.court =factor(dataset$Tennis.court, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Spa =factor(dataset$Spa, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Casino =factor(dataset$Casino, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Free.internet =factor(dataset$Free.internet, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Pool =factor(dataset$Pool, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Pool <- as.integer(dataset$Pool)
+
+dataset$Period.of.stay =factor(dataset$Period.of.stay, levels = c("Dec-Feb", "Mar-May","Jun-Aug","Sep-Nov"), labels = c(1, 2, 3, 4))
+dataset$Period.of.stay <- as.integer(dataset$Period.of.stay)
+
+
+dataset$Review.weekday. =factor(dataset$Review.weekday , levels = c("Thursday","Thursday,","Friday","Friday,","Saturday","Saturday,","Tuesday","Tuesday,","Wednesday","Wednesday,","Sunday","Sunday,","Monday","Monday,"), labels = c(0,0,1,1,2,2,3,3,4,4,5,5,6,6))
+dataset$Traveler.type =factor(dataset$Traveler.type, levels = c("Friends","Solo","Families","Couples","Business"), labels = c(0,1,2,3,4))
+
+dataset$Hotel.name =factor(dataset$Hotel.name, levels = c("Circus Circus Hotel & Casino Las Vegas","Excalibur Hotel & Casino", "Monte Carlo Resort&Casino", "Treasure Island- TI Hotel & Casino", "Tropicana Las Vegas - A Double Tree by Hilton Hotel", "Caesars Palace", "The Cosmopolitan Las Vegas", "The Palazzo Resort Hotel Casino", "Wynn Las Vegas", "Trump International Hotel Las Vegas", "The Cromwell", "Encore at wynn Las Vegas", "Hilton Grand Vacations on the Boulevard", "Marriott's Grand Chateau", "Tuscany Las Vegas Suites & Casino", "Hilton Grand Vacations at the Flamingo", "Wyndham Grand Desert", "The Venetian Las Vegas Hotel", "Bellagio Las Vegas", "Paris Las Vegas", "The Westin las Vegas Hotel Casino & Spa")
+                           , labels = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20))
+dataset$Hotel.name <- as.integer(dataset$Hotel.name)
+
+
+
+
+
+
+
+```
+
+
+here we have the code of the pie chart 
+```{r}
+#pie chart 
+ 
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Traveler.type %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Traveler.type %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+
+
+
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Period.of.stay %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Period.of.stay %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+```
+
+here we have the code of normalization the scores
+```{r}
+#normalization
+dataWithoutNormalization <- dataset
+
+dataset [, 5] = scale(dataset [, 5])
+
+#Define function normalize().
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x)))}
+#Define function Z_normalize().
+Z_normalize <- function(x) {return ((x - mean(x)) / sd(x))}
+
+#Call normalize funcrtion 
+dataset$Score<-normalize(dataWithoutNormalization$Score)
+```
+
+
+
+
+the code of histogram
+
+```{r}
+hist(dataset$User.country, breaks=48)
+hist(dataset$Hotel.name, breaks=20)
+```
+
+the code of scatter graph
+```{r}
+with(dataset, plot(Score,Hotel.stars, col = Pool, pch = as.numeric(Pool)))
+```
+
