@@ -1,0 +1,755 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+**The motivation for the project is to see on what basis stars are assigned to hotels and which attributes influence them.**
+
+**Our class label is " hotel stars", and after several experiments we discovered that the attributes affecting it were [(Pool + Gym + Spa + Free.internet + Tennis.court + Casino)]{.underline}, so we chose it, but the rest did not make a difference in the result.**
+
+**We will predict the Hotel star based on [(Pool + Gym + Spa + Free.internet + Tennis.court + Casino)]{.underline}**
+
+**read the dataset**
+
+```{r}
+
+View(dataset)
+str(dataset)
+```
+
+**pie chart for Traveler.type**
+
+```{r}
+ 
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Traveler.type %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Traveler.type %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+```
+
+**encoding for all the atribiue**
+
+```{r}
+#encoding
+dataset$User.country =factor(dataset$User.country, levels = c("Saudi Arabia", "UK", "Canada", "India", "Australia", "New Zeland", "Ireland", "Egypt", "Finland", "Kenya", "Jordan", "Netherlands", "Syria", "Scotland", "South Africa", "Swiss", "United Arab Emirates", "Hungary", "China", "Greece", "Mexico", "Croatia", "Germany", "Malaysia", "Thailand", "Phillippines", "Israel", "India", "Belgium", "Puerto Rico", "Switzerland", "Norway", "France", "Spain", "Singapore", "Brazil", "Costa Rica", "Iran", "USA", "Honduras", "Denmark", "Taiwan", "Hawaii", "Kuwait", "Czech Republic", "Japan", "Korea", "Italy"),
+                          labels =c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48))
+#to integer
+#dataset$User.country <- as.integer(dataset$User.country)
+
+
+dataset$Gym =factor(dataset$Gym, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Tennis.court =factor(dataset$Tennis.court, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Spa =factor(dataset$Spa, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Casino =factor(dataset$Casino, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Free.internet =factor(dataset$Free.internet, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Pool =factor(dataset$Pool, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Period.of.stay =factor(dataset$Period.of.stay, levels = c("Dec-Feb", "Mar-May","Jun-Aug","Sep-Nov"), labels = c(1, 2, 3, 4))
+
+
+dataset$Review.weekday. =factor(dataset$Review.weekday , levels = c("Thursday","Thursday,","Friday","Friday,","Saturday","Saturday,","Tuesday","Tuesday,","Wednesday","Wednesday,","Sunday","Sunday,","Monday","Monday,"), labels = c(0,0,1,1,2,2,3,3,4,4,5,5,6,6))
+dataset$Traveler.type =factor(dataset$Traveler.type, levels = c("Friends","Solo","Families","Couples","Business"), labels = c(0,1,2,3,4))
+
+dataset$Hotel.name =factor(dataset$Hotel.name, levels = c("Circus Circus Hotel & Casino Las Vegas","Excalibur Hotel & Casino", "Monte Carlo Resort&Casino", "Treasure Island- TI Hotel & Casino", "Tropicana Las Vegas - A Double Tree by Hilton Hotel", "Caesars Palace", "The Cosmopolitan Las Vegas", "The Palazzo Resort Hotel Casino", "Wynn Las Vegas", "Trump International Hotel Las Vegas", "The Cromwell", "Encore at wynn Las Vegas", "Hilton Grand Vacations on the Boulevard", "Marriott's Grand Chateau", "Tuscany Las Vegas Suites & Casino", "Hilton Grand Vacations at the Flamingo", "Wyndham Grand Desert", "The Venetian Las Vegas Hotel", "Bellagio Las Vegas", "Paris Las Vegas", "The Westin las Vegas Hotel Casino & Spa")
+                           , labels = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20))
+
+dataset$Review.month =factor(dataset$Review.month, levels = c("April","August", "December", "February", "January", "July", "June", "March", "May", "November", "October", "September")
+                           , labels = c(0,1,2,3,4,5,6,7,8,9,10,11))
+
+dataset$User.continent=factor(dataset$User.continent, levels=c("North America","Europe","Asia","Oceania","Africa","South America"), labels=c(0,1,2,3,4,5))
+
+```
+
+**finding outliers AND remove outliers**
+
+[**NOTE: RUN THE CODE TWICE WE HAVE TWO OUTLIERS**]{.underline}
+
+```{r}
+#outlaier
+boxplot(dataset$Member.years)
+
+library(outliers)
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+Out
+Find_outlier
+#Remove outlier
+dataset= dataset[-Find_outlier,]
+
+boxplot(dataset$Member.years)
+
+View(dataset)
+
+quantile(dataset$Member.years)
+
+
+
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+Out
+Find_outlier
+```
+
+**normalization**
+
+```{r}
+#normalization
+dataWithoutNormalization <- dataset
+
+dataset [, 5] = scale(dataset [, 5])
+
+#Define function normalize().
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x)))}
+#Define function Z_normalize().
+Z_normalize <- function(x) {return ((x - mean(x)) / sd(x))}
+
+#Call normalize funcrtion 
+dataset$Score<-normalize(dataWithoutNormalization$Score)
+```
+
+**missing data**
+
+```{r}
+is.na(dataset)
+sum(is.na(dataset))
+dataset= dataset[-104,]
+```
+
+**pie chart for Period.of.stay**
+
+```{r}
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Period.of.stay %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Period.of.stay %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+```
+
+**this pie chart for class label** from this pie chart we see that the class label is balanced
+
+```{r}
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Period.of.stay %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Hotel.stars %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+
+pie(tab, labels=txt) # plot pie chart
+```
+
+**2 histograms for User.country and Hotel.name**
+
+```{r}
+
+
+
+hist(dataset$User.country, breaks=48)
+hist(dataset$Hotel.name, breaks=20)
+```
+
+**scatter**
+
+```{r}
+with(dataset, plot(Score,Hotel.stars, col = Pool, pch = as.numeric(Pool)))
+
+
+write.csv2(dataset,"dataset.csv",row.names = FALSE)
+```
+
+**preprossing to invert the attrbiute to factors**
+
+```{r}
+yes<-dataset
+yes$Hotel.stars <- as.factor(yes$Hotel.stars)
+yes$Pool <- as.factor(yes$Pool)
+yes$Gym <- as.factor(yes$Gym)
+yes$Spa <- as.factor(yes$Spa)
+yes$Free.internet <- as.factor(yes$Free.internet)
+yes$Tennis.court <- as.factor(yes$Tennis.court)
+yes$Casino <- as.factor(yes$Casino)
+
+```
+
+**classification-gini index - 1 (Training 80%, Test 20%)**
+
+The decision tree in the image is a classification model that predicts hotel star ratings based on amenities such as a spa, gym, free internet, pool, casino, and tennis court. It's created using the Gini index method, which is a measure of statistical dispersion intended to represent the inequality or purity among the values of a frequency distribution In the context of decision trees, a Gini score gives an idea of how good a split is by how mixed the classes are in the two groups created by the split. The model's accuracy is 0.7227723%, meaning that in approximately 72 out of 100 cases, the model will correctly predict the star rating of a hotel based on these amenities. The tree starts with a decision about the presence of a spa. If a spa is present (denoted as 'Spa = 0'), the next decision is about free internet. If free internet is not available ('Free.internet = 0'), it predicts a 5-star rating If free internet is available, the next decision is based on the presence of a tennis court. If a tennis court is present ('Tennis.court = 1'), it predicts a 5-star rating If there is no tennis court, the outcome is split between different star ratings If there is no spa ('Spa = 1'), the next decision is based on the presence of a gym.
+
+If a gym is present ('Gym = 1'), then the decision goes to the presence of a pool. If there is no pool, it further splits based on the presence of a casino and tennis court, leading to various predictions. The presence of a pool leads to different star ratings. If there is no gym, the model predicts a 3-star rating.
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+
+library(rpart)
+library(rpart.plot)
+dataset.H <- yes
+
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 400)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+Hotel.stars.test1=dataset.H[-train1]
+str(dataset.train1)
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+#try to save it in pdf file to view it clearly
+pdf("tree_plot4.pdf", width = 12, height = 8)  
+rpart.plot(fit.tree)
+dev.off()
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Display confusion matrix
+conf_matrix
+
+
+```
+
+**classification-gini index - 2 (Training 90%, Test 10%)**
+
+The path of the decision tree same as the above tree.The model's accuracy is 0.6862745%, meaning that in approximately 69 out of 100 cases, the model will correctly predict the star rating of a hotel based on these amenities.
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+
+
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 450)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+Hotel.stars.test1=dataset.H[-train1]
+str(dataset.train1)
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+#try to save it in pdf file to view it clearly
+pdf("tree_plot4.pdf", width = 12, height = 8)  
+rpart.plot(fit.tree)
+dev.off()
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Display confusion matrix
+conf_matrix
+```
+
+**classification- gini index - 3 (Training 75%, Test 25%)**
+
+The path of the decision tree same as the above trees.The model's accuracy is 0.6754967%, meaning that in approximately 68 out of 100 cases, the model will correctly predict the star rating of a hotel based on these amenities. from three different splitting we notice that when we took Training 80%, Test 20% has the highest accurecy.
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+
+
+
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 350)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+str(yes)
+Hotel.stars.test1=dataset.H[-train1]
+str(dataset.train1)
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+#try to save it in pdf file to view it clearly
+pdf("tree_plot4.pdf", width = 12, height = 8)  
+rpart.plot(fit.tree)
+dev.off()
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Display confusion matrix
+conf_matrix
+```
+
+**classification-information gain - 1 (Training 70%,Test 30%)**
+
+This decision tree represent a predictive model for hotel star ratings based on amenities such as a gym, spa, pool, tennis court, casino, and free internet. The method used for creating the tree is based on information gain from the highest to the Lowest information gain , which is a criterion for splitting the data in a way that maximizes the reduction of uncertainty The overall accuracy of the model is 71.62162%, which means it correctly predicts the star rating of a hotel based on these features about 71.6% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+# predict on test data
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+**classification-information gain - 2 (Training 80%, Test 20%)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 69%, which means it correctly predicts the star rating of a hotel based on these features about 69% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.8, 0.2))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+**classification-information gain - 3 (Training 90%, Test 10%)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 66%, which means it correctly predicts the star rating of a hotel based on these features about 66% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.9, 0.1))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+# predict on test data
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+**classification- gain ratio - 1 (3 folds)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 3)
+
+# Specify 'method' as "J48" and 'trControl' for classification
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+#visualize 
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+# Create test set
+test <- yes[-train$Fold1, ]  
+
+# Make predictions on the test set
+predictions <- predict(C45Fit, newdata = test)
+
+# Confusion matrix
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Display confusion matrix
+conf_matrix
+```
+
+**classification- gain ratio - 2 (5 folds)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 5)
+
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+test <- yes[-train$Fold1, ]  
+
+predictions <- predict(C45Fit, newdata = test)
+
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+conf_matrix
+```
+
+**classification- gain ratio - 3 (10 folds)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 10)
+
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+#visualize 
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+test <- yes[-train$Fold1, ]  
+
+predictions <- predict(C45Fit, newdata = test)
+
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+conf_matrix
+
+
+```
+
+Our accuracy is constant in gain ratio method because of our dataset is small, changing the number of folds may not have a significant impact on model performance. Cross-validation is generally more effective with larger datasets.
+
+Information gain is the best way to apply to our data, because it gives higher accuracy results than other methods.
+
+**clustring prepreocessing Data types should be transformed into numeric types before clustering.**
+
+```{r}
+yes1<-yes
+yes1$Pool <- as.numeric(yes1$Pool)
+yes1$Gym <- as.numeric(yes1$Gym)
+yes1$Spa <- as.numeric(yes1$Spa)
+yes1$Free.internet <- as.numeric(yes1$Free.internet)
+yes1$Tennis.court <- as.numeric(yes1$Tennis.court)
+yes1$Casino <- as.numeric(yes1$Casino)
+
+View(yes1)
+
+```
+
+**Create a new dataset with only numeric attributes**
+
+```{r}
+new_dataset <- yes1[, sapply(yes1, is.numeric)]
+
+new_dataset <- scale(new_dataset)
+View(new_dataset)
+
+# Specify the subset of attributes for clustering
+subset_attributes <- c("Pool", "Gym", "Spa", "Free.internet", "Tennis.court", "Casino")
+
+# Subset the dataset to include only the specified attributes
+subset_dataset <- new_dataset[, subset_attributes]
+```
+
+**BCubed precision and recall**
+
+```{r}
+# Function to calculate BCubed precision for a specific class label in a cluster
+calculate_BCubed_precision <- function(cluster_assignments, true_labels, class_label) {
+  num_points <- length(cluster_assignments)
+  precision_sum <- 0
+  
+  for (i in 1:num_points) {
+    cluster_indices <- which(cluster_assignments == cluster_assignments[i])
+    class_indices <- which(true_labels == class_label)
+    
+    common_indices <- length(intersect(cluster_indices, class_indices))
+    cluster_size <- length(cluster_indices)
+    
+    precision_sum <- precision_sum + (common_indices / cluster_size)
+  }
+  
+  BCubed_precision <- precision_sum / num_points
+  return(BCubed_precision)
+}
+
+# Function to calculate BCubed recall for a specific class label in a cluster
+calculate_BCubed_recall <- function(cluster_assignments, true_labels, class_label) {
+  num_points <- length(cluster_assignments)
+  recall_sum <- 0
+  
+  for (i in 1:num_points) {
+    cluster_indices <- which(cluster_assignments == cluster_assignments[i])
+    class_indices <- which(true_labels == class_label)
+    
+    common_indices <- length(intersect(cluster_indices, class_indices))
+    class_size <- length(class_indices)
+    
+    recall_sum <- recall_sum + (common_indices / class_size)
+  }
+  
+  BCubed_recall <- recall_sum / num_points
+  return(BCubed_recall)
+}
+
+```
+
+```{r}
+# Specify the class labels (replace with actual class labels in your data)
+class_labels <- c("3", "3,5", "4", "4,5","5")
+
+# Calculate BCubed precision and recall for each class label
+BCubed_precision_recall_results <- matrix(NA, nrow = length(class_labels), ncol = 2,
+                                          dimnames = list(class_labels, c("BCubed_Precision", "BCubed_Recall")))
+
+```
+
+**run k-means clustering to find 4 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result <- kmeans(subset_dataset, 4) 
+kmeans.result
+
+
+#3- visualize clustering
+#install.packages("factoextra")
+library(factoextra)
+fviz_cluster(kmeans.result, data = subset_dataset)
+
+kmeans.result$tot.withinss
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result$cluster,dist(subset_dataset)) #a dissimilarity object inheriting from class dist or coercible to one. If not specified, dmatrix must be.
+fviz_silhouette(avg_sil)#k-means clustering with estimating k and initializations
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result$cluster, yes1$Hotel.stars, class_labels[i])
+}
+
+
+
+# View the results
+print(BCubed_precision_recall_results)
+#print(BCubed_precision_recall_results)
+#BCubed_Precision BCubed_Recall
+#3         0.19161677     0.4401198
+#3,5       0.14371257     0.5708583
+#4         0.23552894     0.6537095
+#4,5       0.04790419     0.8083832
+#5         0.38123752     0.8083832
+```
+
+**run k-means clustering to find 2 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result2 <- kmeans(subset_dataset, 2) 
+kmeans.result2
+
+
+#3- visualize clustering
+library(factoextra)
+fviz_cluster(kmeans.result2, data = subset_dataset)
+
+kmeans.result2$tot.withinss
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result2$cluster,dist(subset_dataset)) 
+fviz_silhouette(avg_sil)
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result2$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result2$cluster, yes1$Hotel.stars, class_labels[i])
+}
+# View the results
+print(BCubed_precision_recall_results)
+
+```
+
+**run k-means clustering to find 6 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result3 <- kmeans(subset_dataset, 6) 
+kmeans.result3
+
+
+#3- visualize clustering
+library(factoextra)
+fviz_cluster(kmeans.result3, data = subset_dataset)
+
+kmeans.result3$tot.withinss
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result3$cluster,dist(subset_dataset)) 
+fviz_silhouette(avg_sil)
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result3$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result3$cluster, yes1$Hotel.stars, class_labels[i])
+}
+# View the results
+print(BCubed_precision_recall_results)
+
+```
+
+For Clustering, we used K-means algorithm with 3 different K to find the optimal number of clusters, we took k=4, k=6, k=2 we calculated the average silhouette width for each K, and we concluded the following results: Number (K)= 4, the average silhouette width=0.7 Number (K)= 2, the average silhouette width=0.6 Number (K)= 6, the average silhouette width=0.9 The model that has the optimal number of clusters is 6-Mean since it has the best average silhouette width which means that objects within the same cluster are close to each other and as far as possible to the objects in the other cluster.
