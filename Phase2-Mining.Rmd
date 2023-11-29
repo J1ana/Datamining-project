@@ -3,6 +3,7 @@ title: "R Notebook"
 output:
   html_document:
     df_print: paged
+  pdf_document: default
 ---
 
 **The motivation for the project is to see on what basis stars are assigned to hotels and which attributes influence them.**
@@ -14,7 +15,7 @@ output:
 **read the dataset**
 
 ```{r}
-
+dataset<-read.csv('dataset.csv')
 View(dataset)
 str(dataset)
 ```
