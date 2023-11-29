@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 **The motivation for the project is to see on what basis stars are assigned to hotels and which attributes influence them.**
@@ -154,6 +156,8 @@ pie(tab, labels=txt) # plot pie chart
 
 ```{r}
 
+dataset$User.country <- as.integer(dataset$User.country)
+dataset$Hotel.name <- as.integer(dataset$Hotel.name)
 
 
 hist(dataset$User.country, breaks=48)
@@ -165,8 +169,6 @@ hist(dataset$Hotel.name, breaks=20)
 ```{r}
 with(dataset, plot(Score,Hotel.stars, col = Pool, pch = as.numeric(Pool)))
 
-
-write.csv2(dataset,"dataset.csv",row.names = FALSE)
 ```
 
 **preprossing to invert the attrbiute to factors**
@@ -470,7 +472,7 @@ plot(constparty_model)
 
 
 # Create test set
-test <- yes[-train$Fold1, ]  
+test <- yes[-folds$Fold1, ]
 
 # Make predictions on the test set
 predictions <- predict(C45Fit, newdata = test)
@@ -509,7 +511,7 @@ plot(constparty_model)
 
 
 
-test <- yes[-train$Fold1, ]  
+test <- yes[-folds$Fold1, ]
 
 predictions <- predict(C45Fit, newdata = test)
 
@@ -545,7 +547,7 @@ plot(constparty_model)
 
 
 
-test <- yes[-train$Fold1, ]  
+test <- yes[-folds$Fold1, ]
 
 predictions <- predict(C45Fit, newdata = test)
 
@@ -753,3 +755,8 @@ print(BCubed_precision_recall_results)
 ```
 
 For Clustering, we used K-means algorithm with 3 different K to find the optimal number of clusters, we took k=4, k=6, k=2 we calculated the average silhouette width for each K, and we concluded the following results: Number (K)= 4, the average silhouette width=0.7 Number (K)= 2, the average silhouette width=0.6 Number (K)= 6, the average silhouette width=0.9 The model that has the optimal number of clusters is 6-Mean since it has the best average silhouette width which means that objects within the same cluster are close to each other and as far as possible to the objects in the other cluster.
+
+```{r}
+
+
+```
