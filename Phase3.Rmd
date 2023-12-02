@@ -1,0 +1,1302 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+1\. Problem
+
+In the context of Las Vegas's dynamic hospitality industry, there is a pressing need to better understand the determinants of hotel star ratings, which are crucial for a hotel's reputation and guest attraction. Despite the heavy reliance on online reviews and ratings by potential travelers, there remains a gap in comprehensive knowledge about what factors contribute to these ratings. To address this, an in-depth analysis of Las Vegas hotel data is required. The goal of this analysis is to identify and understand the key elements that influence a hotel's star rating. This understanding can not only provide insights for hotel management to improve their services but also assist potential guests in making informed decisions based on these ratings.
+
+2\. Data Mining Task
+
+In our project focusing on Las Vegas hotel reviews, we will implement two primary data mining techniques: classification and clustering, with a specific emphasis on predicting hotel star ratings. The classification aspect of our project involves training a model to predict the star ratings of hotels ('hotel stars' being our class label). This prediction will be based on key attributes that, through our research, have shown a significant impact on these ratings. These attributes include the presence of amenities such as a Pool, Gym, Spa, Free Internet, Tennis Court, and Casino.
+
+In the clustering phase, our model will group hotels with similar characteristics, based on these identified attributes. By analyzing clusters of hotels that share these amenities, we aim to understand better and predict patterns in star ratings. This approach will allow us to provide more accurate predictions for the star ratings of new or unreviewed hotels in Las Vegas, based on their amenity offerings. Our findings indicate that these particular amenities are critical in influencing a hotel's star rating, while other factors do not significantly affect the outcome.
+
+3\. Data
+
+-   source : <https://archive.ics.uci.edu/dataset/397/las+vegas+strip>
+
+Number of objects: 504
+
+Number of attributes: 20
+
+-   characteristics of attributes
+
+    |     attribute     | Data type |
+    |:-----------------:|:---------:|
+    |   User Country    |  Nominal  |
+    |    Nr..reviews    |  Numeric  |
+    | Nr..hotel.reviews |  Numeric  |
+    |   Helpful.votes   |  Numeric  |
+    |       Score       |  Ordinal  |
+    |  Period.of.stay   |  Nominal  |
+    |   Traveler.type   |  Nominal  |
+    |       Pool        |  Binary   |
+    |        Gym        |  Binary   |
+    |   Tennis.court    |  Binary   |
+    |        Spa        |  Binary   |
+    |      Casino       |  Binary   |
+    |   Free.internet   |  Binary   |
+    |    Hotel.name     |  Nominal  |
+    |    Hotel.stars    |  Ordinal  |
+    |     Nr..rooms     |  Numeric  |
+    |  User.continent   |  Nominal  |
+    |   Member.years    |  Numeric  |
+    |   Review.month    |  Nominal  |
+    |  Review.weekday   |  Nominal  |
+
+-   **read the dataset**
+
+```{r}
+dataset = read.csv("dataset.csv")
+View(dataset)
+str(dataset)
+```
+
+-   **cheak if there any missing data?**
+
+```{r}
+is.na(dataset)
+sum(is.na(dataset))
+dataset= dataset[-104,]
+```
+
+**(there is no missing data (only one missing data in the row number104 after encoding))**
+
+-   **statistical measures**
+
+    **1- five number summary for all numeric attributes**
+
+    1.  Number of Reviews
+
+```{r}
+summary(dataset$Nr..reviews)
+```
+
+2.  Number of hotel.reviews
+
+```{r}
+summary(dataset$Nr..hotel.reviews)
+```
+
+3.  Number of Helpful.votes
+
+```{r}
+summary(dataset$Helpful.votes)
+
+```
+
+4.  Score
+
+```{r}
+summary(dataset$Score)
+
+```
+
+5.  Hotel.stars
+
+```{r}
+summary(dataset$Hotel.stars)
+
+```
+
+6.  Number of Rooms
+
+```{r}
+summary(dataset$Nr..rooms)
+
+```
+
+7.  Member Years
+
+```{r}
+summary(dataset$Member.years)
+
+```
+
+**2- pie charts**
+
+**pie chart for Traveler.type**
+
+```{r}
+ 
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Traveler.type %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Traveler.type %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+```
+
+**pie chart for Period.of.stay**
+
+```{r}
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Period.of.stay %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Period.of.stay %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+pie(tab, labels=txt) # plot pie chart
+```
+
+**this pie chart for class label**
+
+from this pie chart we see that the class label is balanced
+
+```{r}
+library(dplyr)
+dataset2 <- dataset %>% sample_n(49)
+dataset2$Period.of.stay %>% table() %>% pie() # plot pie chart without percentages
+tab <- dataset2$Hotel.stars %>% table()
+precentages <- tab %>% prop.table() %>% round(3) * 100 
+txt <- paste0(names(tab), '\n', precentages, '%') # text on chart
+
+pie(tab, labels=txt) # plot pie chart
+
+```
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
++---------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Figure                                                                                      | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
++:===========================================================================================:+:==================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================================:+
+| [Figure 1: Pie chart represents period of stay]                                             | We took a sample of 50 respondents in the ' Period of Stay ' category, and the results are represented in a pie chart. The breakdown of Period of Stay is as follows:                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ![](images/b2f547e1-b26e-4c7b-97cb-ce044600fa4c.jpg)                                        | In this sample, the majority was staying from Dec-Feb                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | •Dec-Feb: 14 respondents (28.6 %)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | • Sep-Nov: 9 respondents (18.4%)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | • Mar-May: 14 respondents (28.6 %)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | • Jun-Aug-May: 12 respondents (24.4 %)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | In conclusion we observed distinct trends in reviewers choices of stay periods. Approximately 28.6% of reviewers favored staying in Las Vegas during the winter months, specifically from December to February. This preference for winter occupancy may be influenced by the appeal of holiday vacations, milder weather compared to the scorching summer,comprising 28.6% of reviewers, opted to visit during the                                                                                                                                                                                                                |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | springtime, from March to May, possibly drawn by the pleasant weather, outdoor activities, and spring events in Las Vegas. Conversely, about 24.4% of reviewers chose the period from June to August, highlighting a preference for the vibrant summer atmosphere and outdoor pool experiences. Lastly, 18.4% of reviewers selected the fall months from September to November, indicating an attraction to the autumn ambiance and potential seasonal events.                                                                                                                                                                     |
++---------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [Figure 2: Scatter plot represents score of hotels ]                                        | Analyzing a scatter plot that compares hotels based on the number of stars and their scores reveals fascinating insights into the hospitality industry. The y-axis of the scatter plot represents the number of stars awarded to each hotel, ranging from one to five stars. The x-axis displays the hotels' scores or ratings, reflecting their overall quality and guest satisfaction. In this visual representation, we observe a clear relationship between a hotel's star rating and the likelihood of it having a swimming pool, with triangles denoting the presence of a swimming pool and circles indicating its absence. |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ![](images/9c1315ee-5fe2-4f3c-af46-01d82d5d55b4.jpg)                                        | One striking observation is that as the number of stars increases, so does the probability of a hotel featuring a swimming pool. This trend aligns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | with the expectations of many travelers who associate higher star ratings with enhanced amenities. Hotels with four or five stars predominantly feature triangles, indicating a strong correlation between luxury and pool availability. As the star rating decreases to three and below, we start to see more circles, suggesting that budget and lower-rated hotels are less likely to have swimming pools.                                                                                                                                                                                                                      |
++---------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [Figure 3: Histogram represents the frequency of hotels name]                               | After analyzing this histogram of hotel visitors, with the x-axis representing hotel names and the y-axis indicating the frequency of visitors, this graphical analysis underscores the diverse popularity levels among hotels. "Hotel 1" takes the lead in terms of visitor frequency, while the remaining hotels show a comparable level. By understanding what sets "Hotel 1" apart and considering strategies for the other hotels to distinguish themselves, the industry can work toward optimizing its appeal to a broader range of visitors and achieving a more balanced distribution of guests across its various hotel  |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ![](images/97cdb3fb-a96a-4c5a-ae3e-30fa9c5cc3d6.jpg)                                        |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
++---------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [Figure 4: histogram represents the frequency Nationality of hotel visitors]hotel visitors] | Analyzing a histogram depicting hotel visitors in Las Vegas, where the x- axis symbolizes different countries represented by numbers and the y- axis represents the count of repeat visitors from each country                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ![](images/a30b0989-2149-4f95-9dc8-ddbe0fb0d4ae.jpg){width="142"}                           | Notably, the most frequently repeated number is 39, corresponding to the USA. This observation underscores the significance of the domestic market, emphasizing that American visitors form a substantial portion of Las Vegas' hospitality clientele. The next most prevalent numbers are 1, 2, and 4, signifying Saudi Arabia, the United Kingdom, and India, respectively. This data indicates a considerable influx of visitors from                                                                                                                                                                                           |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | .these countries                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+|                                                                                             |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+|                                                                                             | Hotels in Las Vegas can strategically leverage this information to enhance their guest experience and capture the attention of repeat visitors from these countries. Recognizing the cultural diversity and preferences of guests from Saudi Arabia, the United Kingdom, and India, hotels can tailor their services, amenities, and marketing efforts to better accommodate and appeal to these specific demographics. This may include offering cuisine, entertainment, and activities that resonate with the cultural backgrounds of these guests                                                                               |
++---------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Boxplot for numerical data:
+
+```{r}
+boxplot(dataset$Nr..reviews)
+
+```
+
+```{r}
+
+boxplot(dataset$Nr..hotel.reviews)
+
+
+```
+
+```{r}
+boxplot(dataset$Helpful.votes)
+
+```
+
+```{r}
+boxplot(dataset$Score)
+
+
+```
+
+```{r}
+boxplot(dataset$Nr..rooms)
+
+```
+
+```{r}
+boxplot(dataset$Hotel.stars)
+
+
+```
+
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Figure                                                                  | Description                                                                                                                                                                                                              |
++=========================================================================+==========================================================================================================================================================================================================================+
+| [plotbox represents the distribution and outliers of Nr..reviews]       | we have a lot of outliers in the number of review but we don't have to smooth it because it is not a measure for somthing and it could differ from 1 to other number of review                                           |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [plotbox represents the distribution and outliers of Nr..hotel.reviews] | we have a lot of outliers in the number of hotel review but we don't have to smooth it because of the same reason as Nr..reviews                                                                                         |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [plotbox represents the distribution and outliers of Helpful.votes]     | we have a lot of outliers in the Helpful.votes but we don't have to smooth it because of the same reason as Nr..reviews and Nr..hotel.reviews                                                                            |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [plotbox represents the distribution and outliers of Score]             | 25% of the data lies below or equal to 4 and 75% of the data lies below or equal to 5 so the values are relatively clustered around 4 and 5, with a smaller presence at 1, there are only 2 outliers nedd to be smoothed |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [plotbox represents the distribution and outliers of Nr..rooms]         | we have a lot of outliers in the number of rooms but we don't have to smooth it because of the same reason as Nr..reviews and Nr..hotel.reviews and Helpful.votes                                                        |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| [plotbox represents the distribution and outliers of Hotel.stars]       | in the class label, we can see that 50% and less have 4 or less stars and the rest have 5 stars (most of the hotels have 5 stars as the plot illustrated) but there is no outliers to smooth                             |
++-------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+4\. Data preprocessing
+
+**Encoding for all the attributes**
+
+Data encoding involves converting information like hotel names and locations into numerical codes using the **factor** function. This simplifies data representation, leading to more efficient storage and faster processing. The use of numerical codes enhances analysis and query performance.
+
+We encode all the attributes **except** for the '**Nr rooms**' column, as this column already contains numerical values.
+
+**Data before Encoding**
+
+![](images/Screenshot%20(65).png){width="433"}
+
+![](images/Screenshot%20(64).png){width="462"}
+
+**Data after Encoding**
+
+![](images/Aenc.png){width="470"}
+
+```{r}
+#encoding
+dataset$User.country =factor(dataset$User.country, levels = c("Saudi Arabia", "UK", "Canada", "India", "Australia", "New Zeland", "Ireland", "Egypt", "Finland", "Kenya", "Jordan", "Netherlands", "Syria", "Scotland", "South Africa", "Swiss", "United Arab Emirates", "Hungary", "China", "Greece", "Mexico", "Croatia", "Germany", "Malaysia", "Thailand", "Phillippines", "Israel", "India", "Belgium", "Puerto Rico", "Switzerland", "Norway", "France", "Spain", "Singapore", "Brazil", "Costa Rica", "Iran", "USA", "Honduras", "Denmark", "Taiwan", "Hawaii", "Kuwait", "Czech Republic", "Japan", "Korea", "Italy"),
+                          labels =c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48))
+#to integer
+#dataset$User.country <- as.integer(dataset$User.country)
+
+
+dataset$Gym =factor(dataset$Gym, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Tennis.court =factor(dataset$Tennis.court, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Spa =factor(dataset$Spa, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Casino =factor(dataset$Casino, levels = c("NO", "YES"), labels = c(0, 1))
+dataset$Free.internet =factor(dataset$Free.internet, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Pool =factor(dataset$Pool, levels = c("NO", "YES"), labels = c(0, 1))
+
+dataset$Period.of.stay =factor(dataset$Period.of.stay, levels = c("Dec-Feb", "Mar-May","Jun-Aug","Sep-Nov"), labels = c(1, 2, 3, 4))
+
+
+dataset$Review.weekday. =factor(dataset$Review.weekday , levels = c("Thursday","Thursday,","Friday","Friday,","Saturday","Saturday,","Tuesday","Tuesday,","Wednesday","Wednesday,","Sunday","Sunday,","Monday","Monday,"), labels = c(0,0,1,1,2,2,3,3,4,4,5,5,6,6))
+dataset$Traveler.type =factor(dataset$Traveler.type, levels = c("Friends","Solo","Families","Couples","Business"), labels = c(0,1,2,3,4))
+
+dataset$Hotel.name =factor(dataset$Hotel.name, levels = c("Circus Circus Hotel & Casino Las Vegas","Excalibur Hotel & Casino", "Monte Carlo Resort&Casino", "Treasure Island- TI Hotel & Casino", "Tropicana Las Vegas - A Double Tree by Hilton Hotel", "Caesars Palace", "The Cosmopolitan Las Vegas", "The Palazzo Resort Hotel Casino", "Wynn Las Vegas", "Trump International Hotel Las Vegas", "The Cromwell", "Encore at wynn Las Vegas", "Hilton Grand Vacations on the Boulevard", "Marriott's Grand Chateau", "Tuscany Las Vegas Suites & Casino", "Hilton Grand Vacations at the Flamingo", "Wyndham Grand Desert", "The Venetian Las Vegas Hotel", "Bellagio Las Vegas", "Paris Las Vegas", "The Westin las Vegas Hotel Casino & Spa")
+                           , labels = c(0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20))
+
+dataset$Review.month =factor(dataset$Review.month, levels = c("April","August", "December", "February", "January", "July", "June", "March", "May", "November", "October", "September")
+                           , labels = c(0,1,2,3,4,5,6,7,8,9,10,11))
+
+dataset$User.continent=factor(dataset$User.continent, levels=c("North America","Europe","Asia","Oceania","Africa","South America"), labels=c(0,1,2,3,4,5))
+
+```
+
+**3- histograms**
+
+**2 histograms for User.country and Hotel.name**
+
+```{r}
+dataset$User.country <- as.integer(dataset$User.country)
+dataset$Hotel.name <- as.integer(dataset$Hotel.name)
+hist(dataset$User.country, breaks=48)
+hist(dataset$Hotel.name, breaks=20)
+```
+
+**4- scatter**
+
+```{r}
+with(dataset, plot(Score,Hotel.stars, col = Pool, pch = as.numeric(Pool)))
+
+
+```
+
+[Data cleaning:]{.underline}
+
+**Find outlier and Delete outlier.**
+
+Identify the outliers, and remove the corresponding rows. This process aims to refine the dataset, enhancing its accuracy and facilitating more precise results in subsequent analyses.
+
+**Data [before]{.underline}**
+
+![](images/Picture1.png){width="441"}
+
+![](images/Picture5.png)
+
+![](images/Picture4.png)
+
+**finding outliers AND remove outliers**
+
+[**NOTE: RUN THE CODE TWICE WE HAVE TWO OUTLIERS**]{.underline}
+
+```{r}
+#outlaier
+
+boxplot(dataset$Member.years)
+#This line generates a boxplot to visually inspect the distribution of the "Member.years" column. Boxplots are useful for identifying potential outliers.
+
+library(outliers)
+#The code uses the 'outliers' package to detect outliers in the "Member.years" column and stores the logical result in the variable Out.
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+#sum(Out) calculates the total number of outliers.which(Out == TRUE, arr.ind = TRUE) finds the indices of the outliers.
+Out
+Find_outlier
+#Out and Find_outlier display the logical vector and indices of outliers. Outliers are then removed from the dataset using indexing.
+#Remove outlier
+dataset= dataset[-Find_outlier,]
+
+boxplot(dataset$Member.years)
+#This line generates a new boxplot after removing outliers to visualize the updated distribution.
+
+View(dataset)
+
+quantile(dataset$Member.years)
+
+
+
+
+Out = outlier(dataset$Member.years, logical =TRUE)
+sum(Out)
+Find_outlier = which(Out ==TRUE, arr.ind = TRUE)
+Out
+Find_outlier
+```
+
+**Normalization**
+
+Normalization of hotel "**scores**" is an essential preprocessing step for our dataset. By bringing all the scores to a standardized scale, typically between 0 and 1, code using both **Min-Max and Z-score** normalization methods, which can enhance the performance of machine learning algorithms.
+
+Data before **normalization**
+
+![](images/Screenshot%20(64)-01.png){width="181"}
+
+Data after **normalization**
+
+![](images/Screenshot%20(69)-01.png){width="167"}
+
+```{r}
+#normalization
+dataWithoutNormalization <- dataset
+
+dataset [, 5] = scale(dataset [, 5])
+
+#Define function normalize().
+normalize <- function(x) {return ((x - min(x)) / (max(x) - min(x)))}
+#Define function Z_normalize().
+Z_normalize <- function(x) {return ((x - mean(x)) / sd(x))}
+
+#Call normalize funcrtion 
+dataset$Score<-normalize(dataWithoutNormalization$Score)
+```
+
+**preprossing to invert the attrbiute to factors**
+
+Inverting attributes to factors is particularly useful when dealing with qualitative or ordinal data, allowing for better interpretation and modeling in certain machine applications.
+
+```{r}
+yes<-dataset
+yes$Hotel.stars <- as.factor(yes$Hotel.stars)
+yes$Pool <- as.factor(yes$Pool)
+yes$Gym <- as.factor(yes$Gym)
+yes$Spa <- as.factor(yes$Spa)
+yes$Free.internet <- as.factor(yes$Free.internet)
+yes$Tennis.court <- as.factor(yes$Tennis.court)
+yes$Casino <- as.factor(yes$Casino)
+
+```
+
+### Data before **preprossing**
+
+![](images/Screenshot%20(55).png){width="582"}
+
+![](images/Screenshot%20(56).png){width="586"}
+
+### Data after **preprossing**
+
+![](images/Screenshot%20(81).png){width="590"}
+
+![](images/Screenshot%20(82).png){width="587"}
+
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+**5. Data Mining Technique:**
+
+We applied both **supervised** and **unsupervised** to our dataset using **classification** which is **supervised** and **clustering** which is **unsupervised** techniques.
+
+For **classification**, we used a decision tree Our model will predict the class label **Hotel.stars** which is a scale (1,5)
+
+the prediction is made on the rest attributes **Pool , Gym , Spa ,Free.internet ,Tennis.court , Casino** This technique includes dividing
+
+the dataset into two sets
+
+1-Training dataset: use for train the model
+
+2-Testing dataset: use for evaluate the model accuracy
+
+we tried three different size of partitions to get the best Accuracy
+
+**packages for classification:**
+
+**1-rpart**
+
+**2-rpart.plot**
+
+**packages for clustering** **:**
+
+**1-factoextra**
+
+**2-cluster**
+
+**classification-gini index - 1 (Training 80%, Test 20%)**
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+
+library(rpart)
+library(rpart.plot)
+dataset.H <- yes
+
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 400)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+Hotel.stars.test1=dataset.H[-train1]
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+#try to save it in pdf file to view it clearly
+pdf("tree_plot4.pdf", width = 12, height = 8)  
+rpart.plot(fit.tree)
+dev.off()
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+#calculate precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity), "\n")
+
+# Display confusion matrix
+print(conf_matrix)
+
+```
+
+The decision tree in the image is a classification model that predicts hotel star ratings based on amenities such as a spa, gym, free internet, pool, casino, and tennis court. It's created using the Gini index method, which is a measure of statistical dispersion intended to represent the inequality or purity among the values of a frequency distribution In the context of decision trees, a Gini score gives an idea of how good a split is by how mixed the classes are in the two groups created by the split. The model's accuracy is 0.7227723%, meaning that in approximately 72 out of 100 cases
+
+**classification-gini index - 2 (Training 90%, Test 10%)**
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+library(rpart)
+library(rpart.plot)
+
+
+
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 450)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+Hotel.stars.test1=dataset.H[-train1]
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+#try to save it in pdf file to view it clearly
+pdf("tree_plot4.pdf", width = 12, height = 8)  
+rpart.plot(fit.tree)
+dev.off()
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+#calculate precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity), "\n")
+
+# Display confusion matrix
+print(conf_matrix)
+```
+
+The path of the decision tree same as the above tree.The model's accuracy is 0.6862745%, meaning that in approximately 69 out of 100 cases, the model will correctly predict the star rating of a hotel based on these amenities.
+
+**classification- gini index - 3 (Training 75%, Test 25%)**
+
+```{r}
+#install.packages("rpart")
+#install.packages("rpart.plot")
+set.seed(234)
+train1 = sample(1:nrow(dataset.H), 350)
+dataset.train1=dataset.H[train1,]
+dataset.test1=dataset.H[-train1,]
+Hotel.stars.test1=dataset.H[-train1]
+
+fit.tree = rpart(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino , data=dataset.train1, method = "class", cp=0.002)
+fit.tree
+rpart.plot(fit.tree)
+
+
+
+predictions <- predict(fit.tree, dataset.test1, type = "class")
+
+# Confusion matrix
+conf_matrix <- table(predictions, dataset.test1$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+#calculate precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity), "\n")
+
+# Display confusion matrix
+print(conf_matrix)
+```
+
+The path of the decision tree same as the above trees.The model's accuracy is 0.6754967%, meaning that in approximately 68 out of 100 cases, the model will correctly predict the star rating of a hotel based on these amenities. from three different splitting we notice that when we took Training 80%, Test 20% has the highest accurecy.
+
+**classification-information gain - 1 (Training 70%,Test 30%)**
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.7, 0.3))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+# predict on test data
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+This decision tree represent a predictive model for hotel star ratings based on amenities such as a gym, spa, pool, tennis court, casino, and free internet. The method used for creating the tree is based on information gain from the highest to the Lowest information gain , which is a criterion for splitting the data in a way that maximizes the reduction of uncertainty The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+**classification-information gain - 2 (Training 80%, Test 20%)**
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.8, 0.2))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+**classification-information gain - 3 (Training 90%, Test 10%)**
+
+```{r}
+set.seed(1234)
+ind <- sample(2, nrow(yes), replace=TRUE, prob=c(0.9, 0.1))
+trainData <- yes[ind==1,]
+testData <- yes[ind==2,]
+
+#install.packages('party')
+library(party)
+
+myFormula <- Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino  
+dataset_ctree <- ctree(myFormula, data=trainData)
+
+table(predict(dataset_ctree), trainData$Hotel.stars)
+print(dataset_ctree)
+plot(dataset_ctree,type="simple")
+plot(dataset_ctree)
+
+
+
+# predict on test data
+testPred <- predict(dataset_ctree, newdata = testData)
+table(testPred, testData$Hotel.stars)
+
+#install.packages('caret')
+library(caret)
+results <- confusionMatrix(testPred, testData$Hotel.stars)
+acc <- results$overall["Accuracy"]*100
+acc
+results
+as.table(results)
+as.matrix(results)
+as.matrix(results, what = "overall")
+as.matrix(results, what = "classes")
+print(results)
+
+```
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 68%, which means it correctly predicts the star rating of a hotel based on these features about 68% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+**classification- gain ratio - 1 (3 folds)**
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 3)
+
+# Specify 'method' as "J48" and 'trControl' for classification
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+#visualize 
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+# Create test set
+test <- yes[-folds$Fold1, ]
+
+# Make predictions on the test set
+predictions <- predict(C45Fit, newdata = test)
+
+# Confusion matrix
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+# Calculate accuracy
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Calculate Precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision, na.rm = TRUE), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity, na.rm = TRUE), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity, na.rm = TRUE), "\n")
+
+# Display confusion matrix
+conf_matrix
+```
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+**classification- gain ratio - 2 (5 folds)**
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 5)
+
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+test <- yes[-folds$Fold1, ]
+
+predictions <- predict(C45Fit, newdata = test)
+
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Calculate Precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision, na.rm = TRUE), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity, na.rm = TRUE), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity, na.rm = TRUE), "\n")
+
+# Display confusion matrix
+conf_matrix
+```
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+**classification- gain ratio - 3 (10 folds)**
+
+The path of the decision tree same as the above trees.The overall accuracy of the model is 70%, which means it correctly predicts the star rating of a hotel based on these features about 70% of the time. This metric gives an indication of the model's performance on the dataset it was tested on
+
+```{r}
+set.seed(1958)
+folds <- createFolds(yes$Hotel.stars, k = 10)
+
+C45Fit <- train(Hotel.stars ~ Pool + Gym + Spa + Free.internet + Tennis.court + Casino ,method = "J48", data = yes, tuneLength = 5, trControl = trainControl(method = "cv", index = folds))
+C45Fit
+C45Fit$finalModel
+
+
+#install.packages("partykit")
+library(partykit)
+
+
+#visualize 
+constparty_model <- as.constparty(C45Fit$finalModel)
+plot(constparty_model)
+
+
+
+
+test <- yes[-folds$Fold1, ]  
+
+predictions <- predict(C45Fit, newdata = test)
+
+conf_matrix <- table(predictions, test$Hotel.stars)
+
+accuracy <- sum(diag(conf_matrix)) / sum(conf_matrix)
+cat("Accuracy:", accuracy, "\n")
+
+# Calculate Precision
+precision <- diag(conf_matrix) / rowSums(conf_matrix)
+cat("Precision for each class:", precision, "\n")
+cat("Average Precision:", mean(precision, na.rm = TRUE), "\n")
+
+# Calculate Sensitivity (Recall)
+sensitivity <- diag(conf_matrix) / colSums(conf_matrix)
+cat("Sensitivity for each class:", sensitivity, "\n")
+cat("Average Sensitivity:", mean(sensitivity, na.rm = TRUE), "\n")
+
+# Calculate Specificity
+specificity <- NULL
+for (i in 1:ncol(conf_matrix)) {
+  temp <- conf_matrix[-i, -i]
+  specificity <- c(specificity, sum(diag(temp)) / sum(temp))
+}
+cat("Specificity for each class:", specificity, "\n")
+cat("Average Specificity:", mean(specificity, na.rm = TRUE), "\n")
+
+# Display confusion matrix
+conf_matrix
+
+
+```
+
+|             | gini index             | gini index             | gini index             | information gain       | information gain       | information gain       | gain ratio | gain ratio | gain ratio |
+|--------|--------|--------|--------|--------|--------|--------|--------|--------|--------|
+|             | 75% training, 25% test | 80% training, 20% test | 90% training, 10% test | 70% training, 30% test | 80% training, 20% test | 90% training, 10% test | 3 folds    | 5 folds    | 10 folds   |
+| accuracy    | 67.5%                  | 72%                    | 68.6%                  | 71.6%                  | 69%                    | 66%                    | 71,8%      | 71.2       | 71.6       |
+| precision   | 81%                    | 83%                    | 80%                    | 83%                    | 82%                    | 80%                    | 84%        | 84%        | 84%        |
+| sensitivity | 70%                    | 76%                    | 74%                    | 72%                    | 70%                    | 65%                    | 73%        | 72%        | 73%        |
+| specificity | 75.5%                  | 80%                    | 77%                    | 91%                    | 90%                    | 89.9%                  | 79%        | 78%        | 78.8%      |
+
+Our accuracy is constant in gain ratio method because of our dataset is small, changing the number of folds may not have a significant impact on model performance. Cross-validation is generally more effective with larger datasets.
+
+Information gain is the best way to apply to our data, because it gives higher accuracy results than other methods.
+
+**clustring prepreocessing Data types should be transformed into numeric types before clustering.**
+
+```{r}
+yes1<-yes
+yes1$Pool <- as.numeric(yes1$Pool)
+yes1$Gym <- as.numeric(yes1$Gym)
+yes1$Spa <- as.numeric(yes1$Spa)
+yes1$Free.internet <- as.numeric(yes1$Free.internet)
+yes1$Tennis.court <- as.numeric(yes1$Tennis.court)
+yes1$Casino <- as.numeric(yes1$Casino)
+
+View(yes1)
+
+```
+
+**Create a new dataset with only numeric attributes**
+
+```{r}
+new_dataset <- yes1[, sapply(yes1, is.numeric)]
+
+new_dataset <- scale(new_dataset)
+View(new_dataset)
+
+# Specify the subset of attributes for clustering
+subset_attributes <- c("Pool", "Gym", "Spa", "Free.internet", "Tennis.court", "Casino")
+
+# Subset the dataset to include only the specified attributes
+subset_dataset <- new_dataset[, subset_attributes]
+```
+
+**BCubed precision and recall**
+
+```{r}
+# Function to calculate BCubed precision for a specific class label in a cluster
+calculate_BCubed_precision <- function(cluster_assignments, true_labels, class_label) {
+  num_points <- length(cluster_assignments)
+  precision_sum <- 0
+  
+  for (i in 1:num_points) {
+    cluster_indices <- which(cluster_assignments == cluster_assignments[i])
+    class_indices <- which(true_labels == class_label)
+    
+    common_indices <- length(intersect(cluster_indices, class_indices))
+    cluster_size <- length(cluster_indices)
+    
+    precision_sum <- precision_sum + (common_indices / cluster_size)
+  }
+  
+  BCubed_precision <- precision_sum / num_points
+  return(BCubed_precision)
+}
+
+# Function to calculate BCubed recall for a specific class label in a cluster
+calculate_BCubed_recall <- function(cluster_assignments, true_labels, class_label) {
+  num_points <- length(cluster_assignments)
+  recall_sum <- 0
+  
+  for (i in 1:num_points) {
+    cluster_indices <- which(cluster_assignments == cluster_assignments[i])
+    class_indices <- which(true_labels == class_label)
+    
+    common_indices <- length(intersect(cluster_indices, class_indices))
+    class_size <- length(class_indices)
+    
+    recall_sum <- recall_sum + (common_indices / class_size)
+  }
+  
+  BCubed_recall <- recall_sum / num_points
+  return(BCubed_recall)
+}
+
+```
+
+```{r}
+# Specify the class labels (replace with actual class labels in your data)
+class_labels <- c("3", "3,5", "4", "4,5","5")
+
+# Calculate BCubed precision and recall for each class label
+BCubed_precision_recall_results <- matrix(NA, nrow = length(class_labels), ncol = 2,
+                                          dimnames = list(class_labels, c("BCubed_Precision", "BCubed_Recall")))
+
+```
+
+**run k-means clustering to find 4 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result <- kmeans(subset_dataset, 4) 
+kmeans.result
+
+
+#3- visualize clustering
+#install.packages("factoextra")
+library(factoextra)
+fviz_cluster(kmeans.result, data = subset_dataset)
+
+kmeans.result$tot.withinss
+kmeans.result$tot.withinss
+kmeans.result$tot.withinss
+kmeans.result$tot.withinss
+kmeans.result$tot.withinss
+kmeans.result$tot.withinss
+
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result$cluster,dist(subset_dataset)) #a dissimilarity object inheriting from class dist or coercible to one. If not specified, dmatrix must be.
+fviz_silhouette(avg_sil)#k-means clustering with estimating k and initializations
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result$cluster, yes1$Hotel.stars, class_labels[i])
+}
+
+
+
+# View the results
+print(BCubed_precision_recall_results)
+#print(BCubed_precision_recall_results)
+#BCubed_Precision BCubed_Recall
+#3         0.19161677     0.4401198
+#3,5       0.14371257     0.5708583
+#4         0.23552894     0.6537095
+#4,5       0.04790419     0.8083832
+#5         0.38123752     0.8083832
+```
+
+**run k-means clustering to find 2 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result2 <- kmeans(subset_dataset, 2) 
+kmeans.result2
+
+
+#3- visualize clustering
+library(factoextra)
+fviz_cluster(kmeans.result2, data = subset_dataset)
+
+kmeans.result2$tot.withinss
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result2$cluster,dist(subset_dataset)) 
+fviz_silhouette(avg_sil)
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result2$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result2$cluster, yes1$Hotel.stars, class_labels[i])
+}
+# View the results
+print(BCubed_precision_recall_results)
+
+```
+
+**run k-means clustering to find 6 clusters**
+
+```{r}
+set.seed(8953)
+
+
+
+kmeans.result3 <- kmeans(subset_dataset, 6) 
+kmeans.result3
+
+
+#3- visualize clustering
+library(factoextra)
+fviz_cluster(kmeans.result3, data = subset_dataset)
+
+kmeans.result3$tot.withinss
+
+#silhouette
+library(cluster)
+avg_sil <- silhouette(kmeans.result3$cluster,dist(subset_dataset)) 
+fviz_silhouette(avg_sil)
+
+#BCubed precision and recall
+for (i in 1:length(class_labels)) {
+  BCubed_precision_recall_results[i, 1] <- calculate_BCubed_precision(kmeans.result3$cluster, yes1$Hotel.stars, class_labels[i])
+  BCubed_precision_recall_results[i, 2] <- calculate_BCubed_recall(kmeans.result3$cluster, yes1$Hotel.stars, class_labels[i])
+}
+# View the results
+print(BCubed_precision_recall_results)
+
+```
+
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| Col1                               | Col2                                                       | Col3                                                                                   | Col4                                                                                                             |
++====================================+============================================================+========================================================================================+==================================================================================================================+
+|                                    | k=2                                                        | k=4                                                                                    | k=6                                                                                                              |
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| Average Silhouette width           | +---------------+------------------------+---------------+ | |         |      |      |                                                              | |         |      |      |                                                                                        |
+|                                    | | cluster       | size                   | avg           | | |---------|------|------|                                                              | |---------|------|------|                                                                                        |
+|                                    | +---------------+------------------------+---------------+ | | cluster | size | avg  |                                                              | | cluster | size | avg  |                                                                                        |
+|                                    | | 1             | 477                    | 0.58          | | | 1       | 48   | 0.73 |                                                              | | 1       | 24   | 1.00 |                                                                                        |
+|                                    | +---------------+------------------------+---------------+ | | 2       | 405  | 0.66 |                                                              | | 2       | 48   | 0.71 |                                                                                        |
+|                                    | | 2             | 24                     | 1.00          | | | 3       | 24   | 1.00 |                                                              | | 3       | 287  | 0.87 |                                                                                        |
+|                                    | +---------------+------------------------+---------------+ | | 4       | 24   | 1.00 |                                                              | | 4       | 24   | 1.00 |                                                                                        |
+|                                    |                                                            |                                                                                        | | 5       | 94   | 1.00 |                                                                                        |
+|                                    |                                                            |                                                                                        | | 6       | 24   | 1.00 |                                                                                        |
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| total within-cluster sum of square | ```                                                        | ```                                                                                    | ```                                                                                                              |
+|                                    |  2.407178e+03 2.085551e-29                                 | 6.651325e+01 1.125952e+03 2.085551e-29 1.967222e-29  (between_SS / total_SS =  60.3 %) | 2.085551e-29 6.651325e+01 1.204999e+02 1.967222e-29 2.881391e-28 2.085551e-29  (between_SS / total_SS =  93.8 %) |
+|                                    |  (between_SS / total_SS =  19.8 %)                         | ```                                                                                    | ```                                                                                                              |
+|                                    | ```                                                        |                                                                                        |                                                                                                                  |
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| BCubed precision                   | ```                                                        | 3: 0.19161677                                                                          | ```                                                                                                              |
+|                                    | 3     0.19161677                                           |                                                                                        | 3     0.19161677                                                                                                 |
+|                                    | 3,5:    0.14371257                                         | 3,5: 0.14371257                                                                        | 3,5   0.14371257                                                                                                 |
+|                                    | 4:     0.23552894                                          |                                                                                        | 4     0.23552894                                                                                                 |
+|                                    | 4,5:  0.04790419                                           | 4 : 0.23552894                                                                         | 4,5   0.04790419                                                                                                 |
+|                                    | 5:     0.38123752                                          |                                                                                        | 5     0.38123752                                                                                                 |
+|                                    | ```                                                        | 4,5: 0.04790419                                                                        | ```                                                                                                              |
+|                                    |                                                            |                                                                                        |                                                                                                                  |
+|                                    |                                                            | 5: 0.38123752                                                                          |                                                                                                                  |
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+| BCubed recall                      | ```                                                        | 3: 0.4401198                                                                           | ```                                                                                                              |
+|                                    | 3 :    0.95209581                                          |                                                                                        | 3:   0.22604790                                                                                                  |
+|                                    |                                                            | 3,5: 0.5708583                                                                         | 3,5: 0.41383899                                                                                                  |
+|                                    | 3,5 :  0.95209581                                          |                                                                                        | 4:   0.31591055                                                                                                  |
+|                                    | undefined                                                  | 4 : 0.6537095                                                                          | 4,5: 0.04790419                                                                                                  |
+|                                    | 4: 0.95209581                                              |                                                                                        | 5:  0.52444849                                                                                                   |
+|                                    |                                                            | 4,5: 0.8083832                                                                         | ```                                                                                                              |
+|                                    | 4,5:   0.04790419                                          |                                                                                        |                                                                                                                  |
+|                                    |                                                            | 5: 0.8083832                                                                           |                                                                                                                  |
+|                                    | 5:     0.                                                  |                                                                                        |                                                                                                                  |
+|                                    | ```                                                        |                                                                                        |                                                                                                                  |
++------------------------------------+------------------------------------------------------------+----------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------+
+
+**7. Findings:**
+
+At the beginning, we selected a dataset that represents the rating of las veags hotels that been extracted from **TripAdvisor** we want to predict the hotels stars based on amenities such as a Pool, Gym, Spa, Free Internet, Tennis Court, and Casino.
+
+To enhance the accuracy and efficiency of our analysis, we initially focused on gaining a deep understanding of our dataset. This was achieved by utilizing a range of statistical tools, including pie charts, scatter plots, and histograms, to explore the data's characteristics. We conducted thorough checks for any null or missing values and determined that our dataset was **complete**, with no missing entries. Additionally, we identified and removed any outliers, as these could negatively impact the accuracy of our results.
+
+After that we applied data transformation, so we encode **encoding for all the attributes also we normilze the data in range 0,1**
+
+In the final stages of our analysis, we executed **classification** and **clustering** techniques.
+
+For the **classification**, we opted for the decision tree approach and experimented with three attribute selection measures (IG, G ratio, Gini index) and three different splits of training and testing data:
+
+The accuracies observed from these models were as follows:
+
+**information gain**
+
+we tried
+
+-   With a 70% training and 30% test , the model achieved an overall accuracy of **70%.**
+
+-   With a 80% training and 20% test ,the model achieved an overall accuracy of **70%.**
+
+-   The 90% training and 10% test the model achieved an overall accuracy of **68%.**
+
+**gain ratio**
+
+we tried
+
+-   With a **(3 folds)** the model achieved an overall accuracy of **73%**
+
+-   With a**(5 folds)** the model achieved an overall accuracy of **72%**
+
+<!-- -->
+
+-   With a**(10 folds)** the model achieved an overall accuracy of **71%**
+
+**gini index**
+
+-   With a 80% training and 20% test , the model achieved an overall accuracy of **72.277%**
+
+-   With a 90% training and 10% test ,the model achieved an overall accuracy of **68.62745%**
+
+-   With a 75% training and 25% test test the model achieved an overall accuracy of **67.54967%**
+
+The model that performed the best was the one with the 80% training and 20% test , indicating that it had the **highest rate** of correctly classified instances.
+
+![](images/WhatsApp%20Image%202023-12-02%20at%203.08.52%20PM.jpeg){width="524"}
+
+the model will correctly predict the star rating of a hotel based on these amenities.
+
+-   The root node of the tree starts with the "**Spa**" attribute,
+
+-   When "**Spa**" is YES, the tree further splits based on the "**Gym**"
+
+-   if the "**Gym**" is YES the tree further splits based on the "**Pool**"
+
+-   if the "**Gym**" is No it will predict 4.5 stars
+
+-   if the "**Pool**" is YES it will predict **3** stars
+
+-   if the "**Pool**" is NO the tree further splits based on the "**Casino**"
+
+-   if the "**Casino**" is NO it will predict **3.5** stars
+
+-   if the "**Casino**" is YES the tree further splits based on the "**Tennis.court**"
+
+-   if the "**Tennis.court**" is NO it will predict **3.5** stars
+
+-   if the "**Tennis.court**" is YES it will predict **3** stars
+
+-   On other side if the "**Spa**" is NO the tree further splits based on the "**Free.internet**"
+
+-   if the "**Free.internet**" is YES it will predict **4** stars
+
+-   if the "**Free.internet**" is NO the tree further splits based on the "**Tennis.court**"
+
+-   if the "**Tennis.court**" is NO it will predict **5** stars
+
+-   if the "**Tennis.court**" is YES it will predict **4** stars
+
+For the **clustering** we used K-means algorithm with 3 different K to find the optimal number
+
+of clusters we took k=**4**, k=**6**, k=**2**
+
+we calculated the average silhouette width for each K
+
+the results is
+
+Number (K)= 4, the average silhouette width=**0.7**
+
+Number (K)= 2, the average silhouette width=**0.6**
+
+Number (K)= 6, the average silhouette width=**0.9**
+
+The model that has the optimal number of clusters is **6-Mean** since it has the best average silhouette width which means that objects within the same cluster are close to each other and as far as possible to the objects in the other cluster
+
+![](images/WhatsApp%20Image%202023-12-02%20at%203.08.53%20PM.jpeg){width="542"}
+
+#### **Finally,** After analyzing both clustering and classification outputs it is clear that a classification approach is better suited for our dataset
+
+#### our aim is to predict the star ratings of these hotels, a classification approach is better suited for our needs.
+
+#### This is because it uses known hotel features and their associated star ratings to learn how to predict the rating of the hotel.
+
+#### Therefore, for predicting hotel star ratings based on a set of features, the classification model is the recommended choice.
+
+**8. References:**
+
+1.  OpenAI, "Chat," [Online]. Available: <https://chat.openai.com/>.
+
+2.  [Author(s)], "Labs slides," [Online]. Available: [<https://lms.ksu.edu.sa/>].
+
+3.  K. J. Mazidi, "RPubs," [Online]. Available: [<https://rpubs.com/kjmazidi/195428>.]
+
+4.  C. Guild, "RPubs," [Online]. Available: [<https://rpubs.com/camguild/803096>.]
